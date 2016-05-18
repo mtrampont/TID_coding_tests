@@ -1,5 +1,6 @@
 import org.apache.spark.{SparkConf, SparkContext}
 
+import scala.collection.SortedMap
 import scala.io.Source
 import scala.util.{Try, Failure, Success}
 
@@ -58,33 +59,21 @@ object Test2 {
       println(s"$airport: $passengers")
     }
 
-    //  val sqlContext = new SQLContext(sc)
+    val top10Codes = top10.map(_._1).toSet
 
-    //    import org.apache.spark.sql.types.{StringType, StructField, IntegerType, StructType}
-//    import org.apache.spark.sql.SQLContext
-    //    val bookingSchema = StructType(Array(
-    //      StructField("arr_port", StringType),
-    //      StructField("pax", IntegerType)
-    //    ))
+    val airportCSVPath = getClass.getResource("/airport_geo_names_only.csv").getPath
+    val airports =
+      sc.textFile(airportCSVPath)
+          .map{ record =>
+            val fields = record.split("""\^""", -1).take(2).map(_.trim)
+            fields(0) -> fields(1)
+          }
+          .filter{ case (code, name) => top10Codes.contains(code)}
+          .collectAsMap()
 
-    //    val csvReader = sqlContext.read
-    //        .format("com.databricks.spark.csv")
-    //        .option("header", "true")
-    //        .option("delimiter", "^")
-    //
-    //    val bookings =
-    //      csvReader.load(getClass.getResource("/bookings_extract.csv").getPath)
+    top10.foreach{ case (airport_code, passengers) =>
+      println(s"${airports(airport_code)}: $passengers")
+    }
 
-    //    val searches =
-//      sqlContext.read
-//          .format("com.databricks.spark.csv")
-//          .option("header", "true")
-//          .option("delimiter", "^")
-//          .load(getClass.getResource("/searches.csv").getPath)
-
-//    bookings.printSchema()
-//    bookings.show(10)
-    //println(s"NbBookings: ${bookings.count()}")
-    //println(s"NbSearches: ${searches.count()}")
   }
 }
